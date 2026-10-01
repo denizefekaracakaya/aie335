@@ -1,0 +1,9 @@
+# environments and secrets - never in git
+.venv/
+.env
+# data and generated files - the code can always rebuild them
+raw/
+output/
+*.duckdb
+*.duckdb.wal
+__pycache__/
