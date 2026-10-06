@@ -11,16 +11,19 @@ def main():
     sys.stdout.reconfigure(encoding="utf-8")    # the table borders need UTF-8 (matters on Windows)
     con = duckdb.connect(str(HERE / "aie335.duckdb"), read_only=True)   # serving only reads
 
-    # serving 1: show the result on the screen, for the person who runs the pipeline
+    # serving 1: show the results on the screen, for the person who runs the pipeline
     print("serve: revenue by product category (top 10)")
     con.sql("SELECT * FROM revenue_by_category LIMIT 10").show()
+    print("serve: ten best-selling products")
+    con.sql("SELECT * FROM top_products").show()
 
-    # serving 2: export the whole table as a file, for someone who has no database
+    # serving 2: export each whole table as a file, for someone who has no database
     out = HERE / "output"
     out.mkdir(exist_ok=True)                    # create output/ if it is not there yet
-    target = out / "revenue_by_category.csv"
-    con.execute(f"COPY revenue_by_category TO '{target.as_posix()}' (HEADER)")   # HEADER = column names in line 1
-    print(f"serve: wrote output/{target.name}")
+    for table in ["revenue_by_category", "top_products"]:
+        target = out / f"{table}.csv"
+        con.execute(f"COPY {table} TO '{target.as_posix()}' (HEADER)")   # HEADER = column names in line 1
+        print(f"serve: wrote output/{target.name}")
 
 
 if __name__ == "__main__":

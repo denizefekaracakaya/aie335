@@ -27,3 +27,16 @@ FROM cart_items AS ci
 JOIN raw_products AS p ON p.id = ci.product_id   -- match each item to its product
 GROUP BY p.category                              -- one result row per category
 ORDER BY revenue_after_discount DESC;            -- the biggest category first
+
+-- 3. the ten best-selling products
+--    "best-selling" = most pieces sold; revenue breaks a tie
+CREATE OR REPLACE TABLE top_products AS
+SELECT
+    p.title,
+    sum(ci.quantity)                AS items_sold,              -- pieces sold
+    round(sum(ci.amount_paid), 2)   AS revenue_after_discount   -- what customers paid
+FROM cart_items AS ci
+JOIN raw_products AS p ON p.id = ci.product_id   -- the title lives in raw_products
+GROUP BY p.id, p.title                           -- one row per product (id: titles may repeat)
+ORDER BY items_sold DESC, revenue_after_discount DESC
+LIMIT 10;                                        -- keep only the top ten

@@ -13,7 +13,7 @@ def main():
     con.execute((HERE / "transform.sql").read_text(encoding="utf-8"))
 
     # observability: say how many rows each new table has
-    for table in ["cart_items", "revenue_by_category"]:
+    for table in ["cart_items", "revenue_by_category", "top_products"]:
         rows = con.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
         print(f"transform: {table} has {rows} rows")
 
