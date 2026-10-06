@@ -40,3 +40,16 @@ JOIN raw_products AS p ON p.id = ci.product_id   -- the title lives in raw_produ
 GROUP BY p.id, p.title                           -- one row per product (id: titles may repeat)
 ORDER BY items_sold DESC, revenue_after_discount DESC
 LIMIT 10;                                        -- keep only the top ten
+
+-- 4. revenue per customer state
+--    the cart has a user_id; the state is nested inside the user's address
+CREATE OR REPLACE TABLE revenue_by_state AS
+SELECT
+    u.address.state                 AS state,                   -- dot reaches into the struct
+    count(DISTINCT u.id)            AS customers,               -- customers with a cart
+    count(DISTINCT ci.cart_id)      AS carts,
+    round(sum(ci.amount_paid), 2)   AS revenue_after_discount   -- what customers paid
+FROM cart_items AS ci
+JOIN raw_users AS u ON u.id = ci.user_id         -- match each item to its customer
+GROUP BY u.address.state                         -- one result row per state
+ORDER BY revenue_after_discount DESC;            -- the biggest state first

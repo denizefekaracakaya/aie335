@@ -11,7 +11,7 @@ from pathlib import Path                        # file paths that work on every 
 import requests                                 # makes the HTTP call to the API
 
 BASE_URL = "https://dummyjson.com"              # the source system - we do not own it
-ENDPOINTS = ["carts", "products"]               # what we ask for: /carts and /products
+ENDPOINTS = ["carts", "products", "users"]      # what we ask for: /carts, /products and /users
 RAW = Path(__file__).parent / "raw"             # the folder raw/, next to this file
 
 

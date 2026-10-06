@@ -8,7 +8,7 @@ from pathlib import Path
 import duckdb                   # the database engine - it runs inside this program
 
 HERE = Path(__file__).parent    # the folder this file is in (lab01/)
-TABLES = ["carts", "products"]  # one table per raw file: raw_carts, raw_products
+TABLES = ["carts", "products", "users"]  # one table per raw file: raw_carts, raw_products, raw_users
 
 
 def main():
