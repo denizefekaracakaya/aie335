@@ -23,6 +23,8 @@ TIMEOUT = 10        # seconds we wait for one answer before we give up on it
 MAX_TRIES = 4       # how often we ask for the same page before the run fails
 BACKOFF = 1         # seconds before the second try; doubled every time: 1, 2, 4
 RETRY_STATUS = {429, 500, 502, 503, 504}    # answers that may be different a moment later
+RATE_LIMIT_THRESHOLD = 10
+RATE_LIMIT_PAUSE = 10
 
 
 # what we extract: source name -> the fields we ask for (None = all fields)
@@ -44,6 +46,10 @@ def fetch(url, params):
             problem = type(error).__name__              # for example "ReadTimeout"
         else:
             if response.status_code == 200:             # 200 = OK: we have the page
+                remaining = response.headers.get("x-ratelimit-remaining")
+                if remaining is not None and int(remaining) < RATE_LIMIT_THRESHOLD:
+                    print(f"extract: only {remaining} requests remaining - waiting {RATE_LIMIT_PAUSE} s")
+                    time.sleep(RATE_LIMIT_PAUSE)
                 return response
             if response.status_code not in RETRY_STATUS:
                 # for example 404 (not found): asking again will give the same answer

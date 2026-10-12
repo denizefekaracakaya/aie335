@@ -16,11 +16,13 @@ def main():
     con.sql("SELECT * FROM revenue_by_category LIMIT 10").show()
     print("serve: ten best-selling products")
     con.sql("SELECT * FROM top_products").show()
+    print("serve: revenue by customer state")
+    con.sql("SELECT * FROM revenue_by_state").show()
 
     # serving 2: export each whole table as a file, for someone who has no database
     out = HERE / "output"
     out.mkdir(exist_ok=True)                    # create output/ if it is not there yet
-    for table in ["revenue_by_category", "top_products"]:
+    for table in ["revenue_by_category", "top_products", "revenue_by_state"]:
         target = out / f"{table}.csv"
         con.execute(f"COPY {table} TO '{target.as_posix()}' (HEADER)")   # HEADER = column names in line 1
         print(f"serve: wrote output/{target.name}")

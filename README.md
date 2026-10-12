@@ -86,3 +86,46 @@ Git is for things people write. Data is something the code produces.
 
 - `transform.sql` is logic. We want its history: who changed the definition of "revenue", when, and why. We want it reviewed and identical for everyone. If it is lost, it cannot be rebuilt.
 - `raw/` is data. It can always be fetched again (and the manifest says from where). It grows every day, and git keeps every version forever, so the repository would bloat. Data can also hold personal or secret information (see `/users`), and anything pushed to git is very hard to remove. The same goes for `*.duckdb` and `output/`: the code can always rebuild them.
+
+## Lab 02 - a real extractor
+
+Run the pipeline with `cd lab02 && ./run.sh` (with `.venv` activated). The extractor reads
+DummyJSON in pages, retries temporary failures with backoff, resumes from pages already on disk,
+and requests only `id` and `address` for users. The load step checks that each source is complete.
+The pipeline serves revenue by category, top products, and revenue by customer state, including
+CSV outputs.
+
+### Part C answers
+
+1. **Why pages when `limit=0` returns everything?** The source may cap or reject very large
+	responses, and a bounded page uses less memory. Pages also make retries and resuming cheaper:
+	a failure only costs the current page, not the entire download.
+2. **What if carts change during `skip` pagination?** An insertion or deletion can shift later
+	offsets, causing a cart to be duplicated or missed. Comparing row count with `total` may not
+	catch this if one duplicate replaces one missing row. A stable source snapshot or cursor-based
+	pagination, plus checks for unique cart IDs and stable page/snapshot metadata, can detect or
+	prevent it.
+3. **How to handle a deletion request with immutable raw data?** Immutability is not a reason to
+	retain data against a valid deletion request: identify and purge the person's records from raw
+	storage, derived tables, exports, replicas, and backups under the applicable retention process,
+	while recording the deletion action without retaining the deleted personal data. B4 reduced
+	that work by never extracting the other 26 user fields.
+4. **Build or buy?** A small team may keep a custom extractor when it is inexpensive to maintain
+	and its behavior is valuable to the business. A managed connector is preferable when the team
+	cannot reliably maintain retries, monitoring, schema changes, and integrations, and the cost of
+	buying is lower than the engineering time and business risk of owning it.
+
+### C2 - polite rate limiting
+
+`fetch()` reads `x-ratelimit-remaining` on a successful response and waits 10 seconds below 10
+remaining requests. This can be tested without a burst of API calls by mocking `requests.get` to
+return a response with that header, and mocking `time.sleep` to assert it was called with `10`;
+repeat with a value of `10` to assert there is no wait.
+
+### C3 - changing the page size
+
+With the existing 30-row pages still on disk, changing `PAGE_SIZE` to 50 makes `extract.py`
+reuse those old pages while advancing `skip` by 50. It processes five 30-row cart files before
+the offset reaches 208, so extraction reports **150 rows** against the source's **208** and stops
+before `load.py`. Restore `PAGE_SIZE = 30`; the normal run then reuses all seven correctly aligned
+pages and passes the completeness check.
